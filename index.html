@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>정확한 랜덤 룰렛 - 12시 기준</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #0f172a;
+  color: #e6eef8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px;
+}
+.wheel-wrap {
+  position: relative;
+  width: 360px;
+  height: 360px;
+  margin-bottom: 24px;
+}
+canvas {
+  border-radius: 50%;
+  box-shadow: 0 10px 30px rgba(2,6,23,.6), inset 0 6px 20px rgba(255,255,255,.03);
+}
+.pointer {
+  position: absolute;
+  left: 50%;
+  top: -38px;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 22px solid transparent;
+  border-right: 22px solid transparent;
+  border-bottom: 34px solid #ff2b2b;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,.7));
+  z-index: 50;
+}
+.result {
+  margin-top: 12px;
+  padding: 10px;
+  border-radius: 8px;
+  background: rgba(255,255,255,.03);
+  min-height: 46px;
+  color: #fffb;
+}
+button {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: none;
+  background: #1f6feb;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+}
+</style>
+</head>
+<body>
+<div class="wheel-wrap">
+  <div class="pointer"></div>
+  <canvas id="wheelCanvas" width="360" height="360"></canvas>
+</div>
+<button id="spinBtn">회전</button>
+<div class="result" id="result">준비됨</div>
+<script>
+const canvas = document.getElementById('wheelCanvas');
+const ctx = canvas.getContext('2d');
+const spinBtn = document.getElementById('spinBtn');
+const resultBox = document.getElementById('result');
+
+let slices = [
+  { label: '구글', url: 'https://www.google.com/?hl=ko' },
+  { label: '네이버', url: 'https://www.naver.com/' },
+  { label: '싹스리', url: 'https://namu.wiki/w/%EC%8B%B9%EC%93%B0%EB%A6%AC' },
+  { label: '챗', url: 'https://chatgpt.com/' },
+  { label: '세명컴고', url: 'https://namu.wiki/w/%EC%84%B8%EB%AA%85%EC%BB%B4%ED%93%A8%ED%84%B0%EA%B3%A0%EB%93%B1%ED%95%99%EA%B5%90' },
+  { label: '컴시간알리미', url: 'http://www.xn--s39aj90b0nb2xw6xh.kr/' },
+  { label: '로켓', url: 'https://www.rocketpunch.com/' },
+  { label: '수학', url: 'https://namu.wiki/w/%EC%88%98%ED%95%99' }
+];
+
+const anglePer = 360 / slices.length;
+
+function drawWheel() {
+  ctx.clearRect(0,0,360,360);
+
+  slices.forEach((slice, i) => {
+    const startAngle = (Math.PI * 2 / slices.length) * i - Math.PI/2;
+    const endAngle = startAngle + (Math.PI * 2 / slices.length);
+
+    ctx.beginPath();
+    ctx.moveTo(180,180);
+    ctx.arc(180,180,180,startAngle,endAngle);
+    ctx.fillStyle = i % 2 === 0 ? '#ff8a8a' : '#8ad0ff';
+    ctx.fill();
+
+    ctx.save();
+    ctx.translate(180,180);
+    ctx.rotate(startAngle + (endAngle-startAngle)/2);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#000';
+    ctx.font = 'bold 15px Arial';
+    ctx.fillText(slice.label,110,5);
+    ctx.restore();
+  });
+}
+
+drawWheel();
+
+spinBtn.addEventListener('click', () => {
+  const spins = 5 + Math.random() * 5;
+  const randomAngle = Math.random() * 360;
+  const totalAngle = spins * 360 + randomAngle;
+
+  canvas.style.transition = 'transform 4s cubic-bezier(.15,.9,.05,1)';
+  canvas.style.transform = `rotate(${totalAngle}deg)`;
+
+  canvas.addEventListener('transitionend', function te() {
+    canvas.removeEventListener('transitionend', te);
+
+    const normalized = (totalAngle % 360 + 360) % 360;
+    const corrected = (normalized + 90) % 360;
+    const index = Math.floor(corrected / anglePer);
+    const landed = slices[index];
+
+    resultBox.textContent = `당첨: ${landed.label}`;
+
+    setTimeout(() => {
+      if (landed.url) window.location.href = landed.url;
+    }, 2500);
+  });
+});
+</script>
+</body>
+</html>
